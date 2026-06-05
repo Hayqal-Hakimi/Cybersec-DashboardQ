@@ -10,7 +10,7 @@
 # -------------------------------------------------------------------
 resource "aws_security_group" "backend_sg" {
   name        = "${var.project_name}-${var.environment}-backend-sg"
-  description = "Allow app traffic from internet (CloudFront origin), no SSH — use SSM"
+  description = "Allow app traffic from internet (CloudFront origin), no SSH - use SSM"
   vpc_id      = aws_vpc.main.id
 
   # Ingress: Application port from anywhere (CloudFront IPs connect here)

@@ -97,14 +97,14 @@ resource "aws_s3_bucket_public_access_block" "backend_code_private" {
 # -------------------------------------------------------------------
 resource "terraform_data" "upload_backend_code" {
   triggers_replace = [
-    filesha1("${path.module}/../../backend/app.py"),
-    filesha1("${path.module}/../../backend/requirements.txt"),
+    filesha1("${path.module}/../backend/app.py"),
+    filesha1("${path.module}/../backend/requirements.txt"),
   ]
 
   provisioner "local-exec" {
     command = <<CMD
-      cd '${path.module}/../..'
-      tar -czf /tmp/backend-${var.project_name}.tar.gz -C backend/ .
+      cd '${path.module}/../backend'
+      tar -czf /tmp/backend-${var.project_name}.tar.gz --exclude=venv .
       aws s3 cp /tmp/backend-${var.project_name}.tar.gz s3://${var.project_name}-${var.environment}-backend-code/backend.tar.gz
       rm -f /tmp/backend-${var.project_name}.tar.gz
     CMD

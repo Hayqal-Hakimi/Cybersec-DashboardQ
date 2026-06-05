@@ -42,7 +42,7 @@ resource "aws_cloudwatch_log_metric_filter" "analyze_requests" {
 # Filter: Error 5xx — track server errors
 resource "aws_cloudwatch_log_metric_filter" "error_5xx" {
   name           = "${var.project_name}-${var.environment}-error-5xx"
-  pattern        = "HTTP/1.1\" 5[0-9][0-9]"
+  pattern        = "\"[error]\" 5"
   log_group_name = aws_cloudwatch_log_group.app.name
 
   metric_transformation {
@@ -55,7 +55,7 @@ resource "aws_cloudwatch_log_metric_filter" "error_5xx" {
 # Filter: Error 4xx — track client errors
 resource "aws_cloudwatch_log_metric_filter" "error_4xx" {
   name           = "${var.project_name}-${var.environment}-error-4xx"
-  pattern        = "HTTP/1.1\" 4[0-9][0-9]"
+  pattern        = "\"[error]\" 4"
   log_group_name = aws_cloudwatch_log_group.app.name
 
   metric_transformation {
