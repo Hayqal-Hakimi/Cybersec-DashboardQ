@@ -1,0 +1,58 @@
+# =============================================================
+# terraform.tfvars.example
+# -----------------------------------------------------------
+# CARA GUNA:
+#   1. Salin fail ini:  cp terraform.tfvars.example <project>.tfvars
+#   2. Isi semua nilai dalam <project>.tfvars
+#   3. Deploy:          tofu apply -var-file="<project>.tfvars"
+#
+# ⚠️  KESELAMATAN:
+#   - Fail .tfvars SEBENAR JANGAN commit ke Git
+#   - Tambah dalam .gitignore: *.tfvars
+#   - Fail EXAMPLE ini sahaja yang boleh commit ke Git
+# =============================================================
+
+# -----------------------------------------------------------
+# PROJEK & ENVIRONMENT
+# -----------------------------------------------------------
+project_name = "nama-projek"       # Huruf kecil, tiada spasi. Contoh: cybersec-dashboardq
+environment  = "production"        # Pilihan: dev | staging | production
+
+# -----------------------------------------------------------
+# AWS REGION
+# -----------------------------------------------------------
+aws_region   = "ap-southeast-1"    # Singapore — sesuai untuk Malaysia/SEA
+
+# -----------------------------------------------------------
+# EC2 SERVER
+# -----------------------------------------------------------
+instance_type      = "t3.micro"    # Free tier: t3.micro
+app_port           = 8000          # Port aplikasi (Python FastAPI = 8000)
+root_volume_size   = 20            # GB — gp3 root volume
+ssh_key_path       = "~/.ssh/id_rsa.pub"
+enable_detailed_monitoring = false # Mati untuk jimat kos
+
+# -----------------------------------------------------------
+# NETWORK (VPC)
+# -----------------------------------------------------------
+vpc_cidr  = "10.0.0.0/16"         # 65,534 IPs
+
+# -----------------------------------------------------------
+# AKSES TERHAD
+# -----------------------------------------------------------
+office_ip = ""                     # Kosong = guna AWS SSM Session Manager
+
+# -----------------------------------------------------------
+# DOMAIN (Kosongkan jika belum ada)
+# -----------------------------------------------------------
+domain_name = ""                   # Contoh: cybersec-dashboardq.com
+
+# -----------------------------------------------------------
+# CLOUDWATCH
+# -----------------------------------------------------------
+log_retention_days      = 14       # Jimat kos log
+alarm_evaluation_periods = 3
+alarm_period_seconds    = 300
+alarm_error_threshold   = 10
+alarm_cpu_threshold     = 80
+alarm_sns_topic_arn     = ""       # Kosong = tiada notifikasi

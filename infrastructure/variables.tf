@@ -32,9 +32,9 @@ variable "vpc_cidr" {
 }
 
 variable "app_port" {
-  description = "Application port exposed on the backend server"
+  description = "Application port exposed on the backend server (Python FastAPI = 8000)"
   type        = number
-  default     = 5000
+  default     = 8000
 }
 
 variable "root_volume_size" {
@@ -49,26 +49,14 @@ variable "enable_detailed_monitoring" {
   default     = false
 }
 
-variable "nodejs_version" {
-  description = "Node.js version to install on the instance"
-  type        = number
-  default     = 20
-}
-
 variable "ssh_key_path" {
   description = "Local path to the SSH public key for EC2 key pair"
   type        = string
   default     = "~/.ssh/id_rsa.pub"
 }
 
-variable "db_instance_class" {
-  description = "RDS instance class for the database"
-  type        = string
-  default     = "db.t3.micro"
-}
-
 variable "domain_name" {
-  description = "Custom domain name (empty string means no custom domain)"
+  description = "Custom domain name (empty string means use CloudFront default domain)"
   type        = string
   default     = ""
 }
@@ -82,7 +70,7 @@ variable "office_ip" {
 variable "log_retention_days" {
   description = "Number of days to retain CloudWatch logs"
   type        = number
-  default     = 30
+  default     = 14
 }
 
 variable "alarm_evaluation_periods" {

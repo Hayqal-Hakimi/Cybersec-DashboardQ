@@ -37,3 +37,13 @@ output "backend_api_url" {
   description = "Full URL to reach the backend API"
   value       = "http://${aws_eip.backend.public_ip}:${var.app_port}"
 }
+
+output "cloudfront_domain" {
+  description = "CloudFront distribution domain name — frontend + API access point"
+  value       = aws_cloudfront_distribution.frontend.domain_name
+}
+
+output "app_url" {
+  description = "Main application URL (via CloudFront)"
+  value       = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+}

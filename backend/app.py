@@ -5,17 +5,38 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+# ------------------------------------------------------------------
+# PRODUCTION ORIGINS (tambah CloudFront URL lepas deploy)
+# ------------------------------------------------------------------
+PRODUCTION_ORIGINS: list[str] = [
+    # Development
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5173",  # Vite dev
+    # Production — ganti dengan CloudFront domain lepas deploy
+    # "https://dxxxxxxxxxxxx.cloudfront.net",
+]
 
 app = FastAPI(title="CyberSec Threat Analyzer API", version="4.2.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=PRODUCTION_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ------------------------------------------------------------------
+# Serve frontend static files untuk local dev
+# ------------------------------------------------------------------
+import os
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
+if os.path.isdir(FRONTEND_DIR):
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 TRIGGER_WORDS: list[str] = [
     "win",

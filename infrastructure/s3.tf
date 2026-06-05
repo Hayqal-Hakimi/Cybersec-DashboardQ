@@ -1,64 +1,52 @@
 # =============================================================================
-# S3 BUCKET — Frontend Static Hosting
+# S3 BUCKET — Frontend Static Hosting (OAC via CloudFront)
 # =============================================================================
-# Hosting static site untuk React SPA.
-# Bucket dikonfigurasi untuk public read via bucket policy + OAC dari CloudFront.
+# Bucket is PRIVATE — only accessible via CloudFront Origin Access Control (OAC).
+# No public read. No static website hosting (CloudFront handles serving).
 
 resource "aws_s3_bucket" "frontend" {
   bucket = "${var.project_name}-${var.environment}-frontend"
 
-  # Force destroy membenarkan terraform destroy walaupun bucket tidak kosong
-  # (berguna untuk dev/sandbox — set false untuk production)
   force_destroy = true
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-frontend"
+    Name        = "${var.project_name}-${var.environment}-frontend"
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
   }
 }
 
-# =============================================================================
-# S3 BUCKET WEBSITE CONFIGURATION
-# =============================================================================
-resource "aws_s3_bucket_website_configuration" "hosting" {
+# -------------------------------------------------------------------
+# PRIVATE BUCKET — block all public access
+# CloudFront OAC is the ONLY way to access this bucket
+# -------------------------------------------------------------------
+resource "aws_s3_bucket_public_access_block" "block_public" {
   bucket = aws_s3_bucket.frontend.id
 
-  index_document {
-    suffix = "index.html"
-  }
-
-  error_document {
-    key = "index.html" # React SPA handle routing sendiri
-  }
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-# =============================================================================
-# S3 BUCKET PUBLIC ACCESS BLOCK
-# =============================================================================
-# Kesemua block_access = false untuk benarkan public read.
-# Keselamatan terletak pada bucket policy + CloudFront OAC, bukan block public access.
-resource "aws_s3_bucket_public_access_block" "allow_public" {
-  bucket = aws_s3_bucket.frontend.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-# =============================================================================
-# S3 BUCKET POLICY — Public Read for CloudFront OAC
-# =============================================================================
-# Membenarkan akses public read untuk kandungan statik.
-# NOTE: Dalam production, gantikan Principal dengan CloudFront OAC untuk
-# akses yang lebih selamat (bucket hanya accessible via CloudFront).
-data "aws_iam_policy_document" "frontend_public_read" {
+# -------------------------------------------------------------------
+# BUCKET POLICY — Allow CloudFront OAC only
+# -------------------------------------------------------------------
+data "aws_iam_policy_document" "frontend_oac" {
   statement {
-    sid    = "PublicReadGetObject"
+    sid    = "AllowCloudFrontOAC"
     effect = "Allow"
 
     principals {
-      type        = "*"
-      identifiers = ["*"]
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [aws_cloudfront_distribution.frontend.arn]
     }
 
     actions = [
@@ -71,7 +59,56 @@ data "aws_iam_policy_document" "frontend_public_read" {
   }
 }
 
-resource "aws_s3_bucket_policy" "public_read" {
+resource "aws_s3_bucket_policy" "frontend_oac" {
   bucket = aws_s3_bucket.frontend.id
-  policy = data.aws_iam_policy_document.frontend_public_read.json
+  policy = data.aws_iam_policy_document.frontend_oac.json
+}
+
+# =============================================================================
+# S3 BUCKET — Backend Code Storage
+# =============================================================================
+# Stores the backend application code as a tarball.
+# EC2 downloads via IAM role on boot.
+
+resource "aws_s3_bucket" "backend_code" {
+  bucket = "${var.project_name}-${var.environment}-backend-code"
+
+  force_destroy = true
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-backend-code"
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "backend_code_private" {
+  bucket = aws_s3_bucket.backend_code.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# -------------------------------------------------------------------
+# UPLOAD BACKEND CODE — via local-exec after bucket exists
+# -------------------------------------------------------------------
+resource "terraform_data" "upload_backend_code" {
+  triggers_replace = [
+    filesha1("${path.module}/../../backend/app.py"),
+    filesha1("${path.module}/../../backend/requirements.txt"),
+  ]
+
+  provisioner "local-exec" {
+    command = <<CMD
+      cd '${path.module}/../..'
+      tar -czf /tmp/backend-${var.project_name}.tar.gz -C backend/ .
+      aws s3 cp /tmp/backend-${var.project_name}.tar.gz s3://${var.project_name}-${var.environment}-backend-code/backend.tar.gz
+      rm -f /tmp/backend-${var.project_name}.tar.gz
+    CMD
+  }
+
+  depends_on = [aws_s3_bucket.backend_code]
 }

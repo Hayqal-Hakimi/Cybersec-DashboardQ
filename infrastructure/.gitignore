@@ -1,0 +1,10 @@
+# Terraform — jangan commit state dan cache
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+.terraform.lock.hcl
+
+# tfvars sebenar — JANGAN commit ke Git
+*.tfvars
+!terraform.tfvars.example

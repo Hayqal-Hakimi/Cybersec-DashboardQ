@@ -48,11 +48,28 @@ resource "aws_iam_role_policy_attachment" "cloudwatch" {
 }
 
 # -------------------------------------------------------------------
-# Attach: Secrets Manager — read/write access for DB creds rotation
+# Attach: S3 Read access — download backend code on boot
 # -------------------------------------------------------------------
-resource "aws_iam_role_policy_attachment" "secrets" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+resource "aws_iam_role_policy" "s3_backend_code" {
+  name = "${var.project_name}-${var.environment}-s3-backend-code"
+  role = aws_iam_role.ec2_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket",
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.project_name}-${var.environment}-backend-code",
+          "arn:aws:s3:::${var.project_name}-${var.environment}-backend-code/*",
+        ]
+      },
+    ]
+  })
 }
 
 # -------------------------------------------------------------------

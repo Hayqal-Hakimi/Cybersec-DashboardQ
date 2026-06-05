@@ -79,11 +79,10 @@ resource "aws_instance" "backend_server" {
   }
 
   # Bootstrap script — runs ONCE on first boot only
-  # WARNING: user_data_replace_on_change must remain false (prevents rebuild)
   user_data = templatefile("${path.module}/userdata.sh", {
-    project_name   = var.project_name
-    environment    = var.environment
-    nodejs_version = var.nodejs_version
+    project_name = var.project_name
+    environment  = var.environment
+    app_port     = var.app_port
   })
   user_data_replace_on_change = false
 
